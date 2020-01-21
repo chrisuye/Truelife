@@ -1,5 +1,6 @@
 package com.christian.seyoum.truelife
 
+import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
@@ -9,10 +10,13 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.gson.Gson
 import com.google.gson.JsonArray
+import kotlinx.android.synthetic.main.activity_over_view.*
+import kotlinx.android.synthetic.main.food_layout.*
 
-class OverView : AppCompatActivity() {
+class OverView : AppCompatActivity(), IFoodControl {
 
     lateinit var json:String
     val bloodFoodList:MutableList<String> =
@@ -69,11 +73,42 @@ class OverView : AppCompatActivity() {
 
     )
 
+    override fun launchAdd() {
+        val intent = Intent(this, AddFood::class.java)
+        startActivityForResult(intent, ADD_FOOD_REQUEST_CODE)
+    }
+
+    override fun add(food: Food) {
+        foods.add(food)
+    }
+
+    override fun count(): Int {
+        return foods.count()
+    }
+
+    override fun getFood(): MutableList<Food> {
+        return foods.getFoods()
+    }
+
+    override fun search(word: String): MutableList<Food> {
+        return foods.search(word)
+    }
+
+    override fun reset() {
+        foods.reset()
+    }
+
+    override lateinit var foods: IFoodRepo
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_over_view)
+        foods = FoodRepo(this)
 
         json = intent.getStringExtra("user")
+
+        recycle_view.layoutManager = LinearLayoutManager(this)
+        recycle_view.adapter = MainAdapter(this)
 
 
 
@@ -99,8 +134,16 @@ class OverView : AppCompatActivity() {
                 return true
             }
             override fun onQueryTextChange(newText: String?): Boolean {
-                Toast.makeText(this@OverView,"looking for $newText", Toast.LENGTH_SHORT).show()
-                return false
+
+                if (newText!!.isNotEmpty()){
+                    search(newText)
+                    recycle_view.adapter?.notifyDataSetChanged()
+                }
+                else{
+                    reset()
+                    recycle_view.adapter?.notifyDataSetChanged()
+                }
+                return true
             }
         })
 
@@ -124,8 +167,51 @@ class OverView : AppCompatActivity() {
                 return true
             }
 
+            R.id.add_bar -> {
+                launchAdd()
+                return true
+            }
+
             else -> return super.onOptionsItemSelected(item)
         }
 
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when(resultCode){
+            Activity.RESULT_OK -> {
+                when(requestCode){
+                    ADD_FOOD_REQUEST_CODE -> {
+                        val json = data?.getStringExtra(AddFood.FOOD_EXTRA_KEY)
+                        if (json != null){
+                            val foo = Gson().fromJson<Food>(json,Food::class.java)
+                            foods.add(foo)
+                            recycle_view.adapter?.notifyItemInserted(foods.count())
+                        }
+
+                    }
+                    /*VIEW_NOTE_REQUEST_CODE -> {
+                        val json = data?.getStringExtra(ViewNote.NOTEE_EXTRA_KEY)
+                        val idx = data?.getIntExtra(ViewNote.POSITION_KEY,1)
+                        if (json != null && idx != null){
+                            val todo = Gson().fromJson<Note>(json,Note::class.java)
+                            editNote(todo)
+                            recycle_fram.adapter?.notifyItemChanged(idx)
+                        }
+
+                    }*/
+                }
+
+            }
+            Activity.RESULT_CANCELED -> {
+                Toast.makeText(this,"No change", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    companion object{
+        val ADD_FOOD_REQUEST_CODE = 1
     }
 }

@@ -6,12 +6,17 @@
         android:id="@+id/search_bar"
         android:title="Search"
         android:icon="@drawable/ic_search_black_24dp"
-        app:showAsAction="ifRoom|collapseActionView"
+        app:showAsAction="always|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
+    <item
+        android:id="@+id/add_bar"
+        android:title="Add"
+        android:icon="@drawable/ic_add_black_24dp"
+        app:showAsAction="always"/>
 
     <item android:id="@+id/info"
     android:icon="@drawable/ic_person_black_24dp"
-    android:title="Info"
+    android:title="Profile"
     app:showAsAction="ifRoom"/>
     <item android:id="@+id/logout"
         android:title="Log Out"
